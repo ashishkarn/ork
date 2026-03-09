@@ -5,7 +5,6 @@ import "sync"
 type Peer struct {
 	ID   string
 	Addr string
-	Port uint16
 }
 
 type PeerMap struct {

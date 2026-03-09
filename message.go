@@ -1,9 +1,6 @@
 package main
 
-import (
-	"encoding/binary"
-	"fmt"
-)
+import "fmt"
 
 type MsgType uint8
 
@@ -15,22 +12,15 @@ const (
 type Message struct {
 	Type   MsgType
 	NodeID string
-	Port   uint16
 }
 
 func (m *Message) Encode() []byte {
 	idBytes := []byte(m.NodeID)
-	buf := make([]byte, 0, 2+len(idBytes)+2)
+	buf := make([]byte, 0, 2+len(idBytes))
 
 	buf = append(buf, uint8(m.Type))
 	buf = append(buf, uint8(len(idBytes)))
 	buf = append(buf, idBytes...)
-
-	if m.Type == MsgAnnounce {
-		port := make([]byte, 2)
-		binary.BigEndian.PutUint16(port, m.Port)
-		buf = append(buf, port...)
-	}
 
 	return buf
 }
@@ -49,13 +39,6 @@ func Decode(data []byte) (*Message, error) {
 	}
 
 	msg.NodeID = string(data[2 : 2+idLen])
-
-	if msg.Type == MsgAnnounce {
-		if len(data) < 2+idLen+2 {
-			return nil, fmt.Errorf("truncated tcp port")
-		}
-		msg.Port = binary.BigEndian.Uint16(data[2+idLen : 2+idLen+2])
-	}
 
 	return msg, nil
 }

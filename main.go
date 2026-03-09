@@ -14,5 +14,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	RunREPL(node)
+	select {}
 }

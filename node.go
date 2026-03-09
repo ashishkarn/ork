@@ -10,6 +10,7 @@ import (
 
 type Node struct {
 	self    Peer
+	port    uint16
 	peers   *PeerMap
 	udpConn *net.UDPConn
 }
@@ -18,15 +19,15 @@ func NewNode(port int) *Node {
 	hostname, _ := os.Hostname()
 	return &Node{
 		self: Peer{
-			ID:   hostname,
-			Port: uint16(port),
+			ID: hostname,
 		},
+		port:  uint16(port),
 		peers: NewPeerMap(),
 	}
 }
 
 func (n *Node) Start() error {
-	addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("0.0.0.0:%d", n.self.Port))
+	addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("0.0.0.0:%d", n.port))
 	if err != nil {
 		return err
 	}
@@ -37,7 +38,7 @@ func (n *Node) Start() error {
 	}
 
 	n.udpConn = conn
-	log.Printf("[node] UDP listening on %d as %s", n.self.Port, n.self.ID)
+	log.Printf("[node] UDP listening on %d as %s", n.port, n.self.ID)
 	go n.listenUDP()
 	return nil
 }
@@ -72,10 +73,9 @@ func (n *Node) listenUDP() {
 			peer := Peer{
 				ID:   msg.NodeID,
 				Addr: remoteAddr.IP.String(),
-				Port: msg.Port,
 			}
 			n.peers.Add(peer)
-			log.Printf("[udp] ANNOUNCE from %s @ %s:%d", peer.ID, peer.Addr, peer.Port)
+			log.Printf("[udp] ANNOUNCE from %s @ %s", peer.ID, peer.Addr)
 		}
 	}
 }
@@ -84,7 +84,6 @@ func (n *Node) sendAnnounce(to *net.UDPAddr) {
 	msg := &Message{
 		Type:   MsgAnnounce,
 		NodeID: n.self.ID,
-		Port:   n.self.Port,
 	}
 	n.udpConn.WriteToUDP(msg.Encode(), to)
 	log.Printf("[udp] ANNOUNCE sent to %s", to)
@@ -96,7 +95,7 @@ func (n *Node) Discover() []Peer {
 		NodeID: n.self.ID,
 	}
 
-	broadcast, _ := net.ResolveUDPAddr("udp", fmt.Sprintf("255.255.255.255:%d", n.self.Port))
+	broadcast, _ := net.ResolveUDPAddr("udp", fmt.Sprintf("255.255.255.255:%d", n.port))
 	n.udpConn.WriteToUDP(msg.Encode(), broadcast)
 	log.Printf("[discover] DISCOVER broadcast sent, collecting for 2s...")
 
