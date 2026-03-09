@@ -14,6 +14,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// TODO: REPL goes here
-	select {}
+	RunREPL(node)
 }
